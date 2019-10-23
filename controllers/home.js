@@ -1,12 +1,11 @@
 const mailer = require("nodemailer");
 const { Contactmailer, DefaultLocale, userSession } = require("../keys");
-const userSessionVerification = require("../helpers/userVerification");
+const helper = require("../helpers/libs");
 
 const ctrl = {};
 
 ctrl.firstRedirect = (req, res) => {
-  let ip = req.ip;
-  userSession.userIp = ip;
+  userSession.userIp = req.ip;
   res.redirect(`/${DefaultLocale.preferedUserLanguage}`);
 };
 
@@ -21,109 +20,60 @@ ctrl.index = async (req, res) => {
     lang === "jp"
   ) {
     DefaultLocale.preferedUserLanguage = lang;
-    let toTranslateJSON = require(`../locales/${req.params.language}.json`);
-    // User session verification
-    let actualUserSession = userSession.actualUserSession;
-    let userProperties = {};
-    userProperties = userSessionVerification.userSessionResponse(
-      actualUserSession
-    );
-
-    let viewModel = {
-      title: `${toTranslateJSON.home} - Aurora Development`,
-      session: {}
-    };
-    viewModel.language = toTranslateJSON;
-    viewModel.language.CurrentLanguage = lang;
-    viewModel.session = userProperties;
-    viewModel.session.username = userSession.username;
-
+    let language = req.params.language;
+    let viewModel = await helper.init(language, true);
+    viewModel.title = `${viewModel.language.sectionsInfo.home} - Aurora Development`;
     res.render("sections/homeSection/homeIndex", viewModel);
   } else {
-    let toTranslateJSON = require(`../locales/${DefaultLocale.preferedUserLanguage}.json`);
-    let viewModel = { title: "Error 404", language: {} };
-    viewModel.language = toTranslateJSON;
-    viewModel.language.CurrentLanguage = DefaultLocale.preferedUserLanguage;
-    res.render("partials/errors/error404", viewModel);
+    res.send(`/${DefaultLocale.preferedUserLanguage}/not-available`);
   }
+
 };
 
 // For our services section
 
-ctrl.services = (req, res) => {
-  let toTranslateJSON = require(`../locales/${req.params.language}.json`);
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-
-  let viewModel = {
-    title: `${toTranslateJSON.ourServices} - Aurora Development`,
-    language: {}
-  };
-  viewModel.language = toTranslateJSON;
-  viewModel.language.CurrentLanguage = req.params.language;
-  viewModel.session = userProperties;
-  viewModel.session.username = userSession.username;
+ctrl.services = async (req, res) => {
+  let language = req.params.language;
+  let viewModel = await helper.init(language, true);
+  viewModel.title = `${viewModel.language.sectionsInfo.ourServices} - Aurora Development`;
   res.render("sections/ourServicesSection/ourServicesView", viewModel);
 };
 
-ctrl.servicesSend = (req, res) => {
+ctrl.servicesSend = async (req, res) => {
   res.send("sent!");
 };
 
 // About us
 
-ctrl.aboutUs = (req, res) => {
+ctrl.aboutUs = async (req, res) => {
   res.send("about us section");
 };
 
 // Mailers
 
-ctrl.contact = (req, res) => {
-  let toTranslateJSON = require(`../locales/${req.params.language}.json`);
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-
-  let viewModel = {
-    title: `${toTranslateJSON.contactUs} - Aurora Development`,
-    language: {}
-  };
-  viewModel.language = toTranslateJSON;
-  viewModel.language.CurrentLanguage = req.params.language;
-  viewModel.session = userProperties;
-  viewModel.session.username = userSession.username;
+ctrl.contact = async (req, res) => {
+  let language = req.params.language;
+  let viewModel = await helper.init(language, true);
+  viewModel.title = `${viewModel.language.sectionsInfo.contactUs} - Aurora Development`;
   res.render("sections/contactUsSection/mailer", viewModel);
 };
 
-ctrl.userAgreement = (req, res) => {
-  let toTranslateJSON = require(`../locales/${req.params.language}.json`);
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-  let viewModel = {
-    title: `${toTranslateJSON.userAgreementPolicy.userAgreementPolicyTitle} - Aurora Development`,
-    language: {}
-  };
-  viewModel.language = toTranslateJSON;
-  viewModel.language.CurrentLanguage = req.params.language;
-  viewModel.session = userProperties;
-  viewModel.session.username = userSession.username;
+ctrl.userAgreement = async (req, res) => {
+  let language = req.params.language;
+  let viewModel = await helper.init(language, true);
+  viewModel.title = `${viewModel.language.userAgreementPolicy.userAgreementPolicyTitle} - Aurora Development`;
+
   res.render("partials/extras/userAgreementTerms", viewModel);
 };
 
 ctrl.contactSend = async (req, res) => {
   let transporter = mailer.createTransport({
-    service: "gmail",
+    host: "smtp.stackmail.com",
+    port: 587,
+    secure: false,
     auth: {
-      user: Contactmailer.user,
-      pass: Contactmailer.pass
+      user: Contactmailer.ContactEmail.user,
+      pass: Contactmailer.ContactEmail.pass
     }
   });
 
@@ -133,8 +83,8 @@ ctrl.contactSend = async (req, res) => {
   let email = req.body.sender;
 
   let mailOptions = {
-    from: pattern.test(email) ? email.toLowerCase() : "emailnotavailable",
-    to: "jhonatanrg@live.co",
+    from: Contactmailer.ContactEmail.user,
+    to: Contactmailer.ContactEmail.user,
     subject: req.body.subject,
     text: req.body.issue
   };
@@ -158,75 +108,39 @@ ctrl.contactSend = async (req, res) => {
 
 // Translation helper
 
-ctrl.getLanguageJSON = (req, res) => {
-  let toTranslateJSON = require(`../locales/${DefaultLocale.preferedUserLanguage}.json`);
+ctrl.getLanguageJSON = async (req, res) => {
+  let toTranslateJSON = await require(`../locales/${DefaultLocale.preferedUserLanguage}.json`);
   res.send(JSON.stringify(toTranslateJSON));
 };
 
 // Errors
 
-ctrl.error404 = (req, res) => {
-  let toTranslateJSON = require(`../locales/${DefaultLocale.preferedUserLanguage}.json`);
-  let viewModel = { title: "Error 404", language: {} };
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-  viewModel.language = toTranslateJSON;
-  viewModel.language.CurrentLanguage = DefaultLocale.preferedUserLanguage;
-  viewModel.session = userProperties;
-  viewModel.session.username = userSession.username;
+ctrl.error404 = async (req, res) => {
+  let language = DefaultLocale.preferedUserLanguage;
+  let viewModel = await helper.init(language, true);
+  viewModel.title = `Error 404 - Aurora Development`;
   res.render("partials/errors/error404", viewModel);
 };
 
-ctrl.error403 = (req, res) => {
-  let toTranslateJSON = require(`../locales/${DefaultLocale.preferedUserLanguage}.json`);
-  let viewModel = { title: "Error 403", language: {} };
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-  viewModel.language = toTranslateJSON;
-  viewModel.language.CurrentLanguage = DefaultLocale.preferedUserLanguage;
-  viewModel.session = userProperties;
-  viewModel.session.username = userSession.username;
+ctrl.error403 = async (req, res) => {
+  let language = DefaultLocale.preferedUserLanguage;
+  let viewModel = await helper.init(language, true);
+  viewModel.title = `Error 403 - Aurora Development`;
   res.render("partials/errors/error403", viewModel);
 };
 
-ctrl.error503 = (req, res) => {
-  let toTranslateJSON = require(`../locales/${DefaultLocale.preferedUserLanguage}.json`);
-  let viewModel = { title: "Error 503", language: {} };
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-  viewModel.language = toTranslateJSON;
-  viewModel.language.CurrentLanguage = DefaultLocale.preferedUserLanguage;
-  viewModel.session = userProperties;
-  viewModel.session.username = userSession.username;
+ctrl.error503 = async (req, res) => {
+  let language = DefaultLocale.preferedUserLanguage;
+  let viewModel = await helper.init(language, true);
+  viewModel.title = `Error 503 - Aurora Development`;
   res.render("partials/errors/error503", viewModel);
 };
 
-ctrl.error504 = (req, res) => {
-  let toTranslateJSON = require(`../locales/${DefaultLocale.preferedUserLanguage}.json`);
-  let viewModel = { title: "Error 504", language: {} };
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-  viewModel.language = toTranslateJSON;
-  viewModel.language.CurrentLanguage = DefaultLocale.preferedUserLanguage;
-  viewModel.session = userProperties;
-  viewModel.session.username = userSession.username;
+ctrl.error504 = async (req, res) => {
+  let language = DefaultLocale.preferedUserLanguage;
+  let viewModel = await helper.init(language, true);
+  viewModel.title = `Error 504 - Aurora Development`;
   res.render("partials/errors/error504", viewModel);
-};
-
-ctrl.unhandledPromise = (req, res) => {
-  console.log("Rechazo de promesa sin manejar");
 };
 
 module.exports = ctrl;

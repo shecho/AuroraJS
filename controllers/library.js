@@ -1,49 +1,75 @@
 const { Contactmailer, DefaultLocale, userSession } = require("../keys");
 const userSessionVerification = require("../helpers/userVerification");
+const helper = require("../helpers/libs");
 
 const ctrl = {};
 
-ctrl.index = (req, res) => {
-  let toTranslateJSON = require(`../locales/${req.params.language}.json`);
-  let viewModel = {
-    title: `${toTranslateJSON.library} - Aurora Development`,
-    language: {}
-  };
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-
-  viewModel.language = toTranslateJSON;
-  viewModel.language.CurrentLanguage = req.params.language;
-  viewModel.session = userProperties;
+ctrl.index = async (req, res) => {
+  let language = req.params.language;
+  let viewModel = await helper.init(language);
+  viewModel.title = `${viewModel.language.sectionsInfo.library} - Aurora Development`;
   res.render("sections/librarySection/libraryIndex", viewModel);
 };
 
-ctrl.view = (req, res) => {
-  let toTranslateJSON = require(`../locales/${req.params.language}.json`);
-  let viewModel = {
-    title: `${toTranslateJSON.library} - Aurora Development`,
-    language: {}
-  };
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-  viewModel.session = userProperties;
+ctrl.bookView = async (req, res) => {
+  let language = req.params.language;
+  let viewModel = await helper.init(language);
+  viewModel.title = `${viewModel.language.sectionsInfo.library} - Aurora Development`;
+  res.render("sections/librarySection/bookView", viewModel);
 };
 
-ctrl.create = (req, res) => {
-  console.log(req.file);
-  res.send("Completado!");
+ctrl.bookUploadView = async (req, res) => {
+  let language = req.params.language;
+  let viewModel = await helper.init(language);
+  viewModel.title = `${viewModel.language.sectionsInfo.library} - Aurora Development`;
+  res.render("sections/librarySection/bookUpload", viewModel);
 };
 
-ctrl.like = (req, res) => {};
+ctrl.bookUploadProcess = async (req, res) => {
+  res.send("works!");
+};
 
-ctrl.comment = (req, res) => {};
+ctrl.bookDelete = async (req, res) => {
+  res.send("works!");
+};
 
-ctrl.delete = (req, res) => {};
+ctrl.bookLike = async (req, res) => {
+  res.send("works!");
+};
+
+ctrl.bookComment = async (req, res) => {
+  res.send("works!");
+};
+
+ctrl.courseView = async (req, res) => {
+  res.send("works!");
+};
+
+ctrl.courseUploadView = async (req, res) => {
+  let language = req.params.language;
+  let viewModel = await helper.init(language);
+  viewModel.title = `${viewModel.language.sectionsInfo.courses} - Aurora Development`;
+  res.render("sections/librarySection/courseUpload", viewModel);
+};
+
+ctrl.courseUploadProcess = async (req, res) => {
+  res.send("works!");
+};
+
+ctrl.courseDelete = async (req, res) => {
+  res.send("works!");
+};
+
+ctrl.courseLike = async (req, res) => {
+  res.send("works!");
+};
+
+ctrl.courseComment = async (req, res) => {
+  res.send("works!");
+};
+
+ctrl.wishlistAdd = async (req, res) => {
+  res.send("works!");
+};
 
 module.exports = ctrl;

@@ -5,38 +5,20 @@ const { software, comment, user } = require("../models/index");
 const md5 = require("md5");
 const sidebar = require("../helpers/sidebar");
 const { DefaultLocale, userSession } = require("../keys");
-const userSessionVerification = require("../helpers/userVerification");
 const stripe = require("stripe")("sk_test_PbVyc5UdjKaPyLjN1wQrVNOh00GsVyog6c");
+const moment = require("moment");
 
 const ctrl = {};
 
 ctrl.index = async (req, res) => {
   // First of all load the JSON where's the language to translate the page
-  let CurrentLanguage = req.params.language;
-  let toTranslateJSON = require(`../locales/${CurrentLanguage}.json`);
-  // User session verification
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-
+  let language = req.params.language;
+  let viewModel = await helper.init(language, true);
+  viewModel.title = `${viewModel.language.sectionsInfo.software} - Aurora Development`;
   // Search & load 'softwares' with the search of softwares within the MongoDB database
   const softwares = await software.find().sort({ timestamp: -1 });
-
   // Load viewModel with an array for softwares and title.
-  let viewModel = {
-    softs: [],
-    title: `${toTranslateJSON.software} - Aurora Development`
-  };
-  viewModel.language = toTranslateJSON;
-  viewModel.language.CurrentLanguage = CurrentLanguage;
   viewModel.softs = softwares;
-  viewModel.session = userProperties;
-  viewModel.session.username = userSession.username;
-
-  // Reassign preferedLanguage to the current selected language.
-  DefaultLocale.preferedUserLanguage = CurrentLanguage;
 
   if (softwares[0] === undefined) {
     res.render("sections/softwareSection/softwareIndex", viewModel);
@@ -48,28 +30,9 @@ ctrl.index = async (req, res) => {
 };
 
 ctrl.view = async (req, res) => {
-  let CurrentLanguage = req.params.language;
-  let toTranslateJSON = require(`../locales/${CurrentLanguage}.json`);
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-
-  let viewModel = {
-    soft: {},
-    comments: {},
-    language: {},
-    title: `${toTranslateJSON.software} - Aurora Development`
-  };
-  viewModel.language = toTranslateJSON;
-  viewModel.language.CurrentLanguage = CurrentLanguage;
-  viewModel.session = userProperties;
-  userProperties.nonlogged === true
-    ? (viewModel.session.aintLogged = true)
-    : null;
-  viewModel.session.username = userSession.username;
-  viewModel.session.email = userSession.email;
+  let language = req.params.language;
+  let viewModel = await helper.init(language, true, true);
+  viewModel.title = `${viewModel.language.sectionsInfo.software} - Aurora Development`;
 
   // Software which will be rendered.
   let softwareToFind = req.params.software_id;
@@ -78,7 +41,15 @@ ctrl.view = async (req, res) => {
     filename: { $regex: softwareToFind }
   });
 
-  if (!(userProperties.nonlogged === true)) {
+  let uploaderInfo = await user.findOne({ userId: soft.userUploaderId });
+  if (uploaderInfo) {
+    viewModel.session.uploaderInfo = uploaderInfo;
+    if (uploaderInfo.profile_pic === "") {
+      viewModel.session.profile_pic = false;
+    }
+  }
+
+  if (!(viewModel.session.nonlogged === true)) {
     let userInfo = await user.findOne({
       userId: userSession.userId
     });
@@ -99,7 +70,6 @@ ctrl.view = async (req, res) => {
   if (soft) {
     soft.views = soft.views + 1;
     viewModel.soft = soft;
-    viewModel.soft.CurrentLanguage = req.params.language;
     await soft.save();
     viewModel.comments = await comment.find({ soft_id: soft._id });
     viewModel = await sidebar(viewModel);
@@ -110,6 +80,10 @@ ctrl.view = async (req, res) => {
 };
 
 ctrl.download = async (req, res) => {
+  res.send("XD");
+};
+
+ctrl.buy = async (req, res) => {
   let softwareInformation = await software.findOne({
     filename: { $regex: req.params.software_id }
   });
@@ -125,31 +99,26 @@ ctrl.download = async (req, res) => {
     userId: userSession.userId
   });
 
-  saveUserPaymentInformation.software_collection.push(softwareInformation);
-
-  await saveUserPaymentInformation
-    .save()
-    .catch(reason => {
-      console.log("Error saving information ", reason);
-    })
-    .then(data => {
-      console.log(data);
-    });
-
-  let toTranslateJSON = require(`../locales/${req.params.language}.json`);
-  let actualUserSession = userSession.actualUserSession;
-  let userProperties = {};
-  userProperties = userSessionVerification.userSessionResponse(
-    actualUserSession
-  );
-  let viewModel = {
-    title: `${toTranslateJSON.software} - Aurora Development`,
-    language: {}
+  let toPaymentHistory = {
+    name: softwareInformation.title,
+    filename: softwareInformation.filename,
+    description: softwareInformation.description,
+    price: softwareInformation.price,
+    paymentMethod: customer.payment_method_types,
+    currency: customer.currency,
+    date: moment().format("YYYY/MM/D hh:mm:ss SSS")
   };
-  viewModel.language = toTranslateJSON;
-  viewModel.language.CurrentLanguage = req.params.language;
-  viewModel.session = userProperties;
-  viewModel.session.username = userSession.username;
+
+  saveUserPaymentInformation.software_collection.push(softwareInformation);
+  saveUserPaymentInformation.payment_collection.push(toPaymentHistory);
+
+  await saveUserPaymentInformation.save().catch(reason => {
+    console.log("Error saving information ", reason);
+  });
+
+  let language = req.params.language;
+  let viewModel = await helper.init(language, true);
+  viewModel.title = `${viewModel.language.softwareInfo.download} - Aurora Development`;
   res.render("sections/softwareSection/softwareDownload", viewModel);
 };
 
@@ -167,9 +136,14 @@ ctrl.create = async (req, res) => {
   const imageTempPath = req.file.path;
   const ext = path.extname(req.file.originalname).toLowerCase();
   const targetPath = path.resolve(`src/public/upload/${url}${ext}`);
-
   // Verifying software preview image extensions
-  if (ext === ".png" || ext === ".jpg" || ext === ".jpeg" || ext === ".gif") {
+  if (
+    ext === ".png" ||
+    ext === ".jpg" ||
+    ext === ".jpeg" ||
+    ext === ".gif" ||
+    ext === ".svg"
+  ) {
     // Therefore filesystem can rename images with their final name within db
     await fs.rename(imageTempPath, targetPath);
     // Model instance
@@ -244,7 +218,7 @@ ctrl.delete = async (req, res) => {
     await comment.deleteOne({ soft_id: soft._id });
     await soft.remove();
     res.status(200);
-    let redirectLink = `/${DefaultLocale.preferedUserLanguage}/software`;
+    let redirectLink = `/${DefaultLocale.preferedUserLanguage}`;
     res.send(JSON.stringify(redirectLink));
   } else {
     res.render("partials/errors/error504");
