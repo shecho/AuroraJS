@@ -31,8 +31,9 @@
 
     .icons {
         position: absolute;
-        right: 40px;
-        bottom: 40px;
+        right: 10%;
+        bottom: 25%;
+        visibility: hidden;
     }
 
     .icon {
@@ -41,10 +42,12 @@
         font-size: 22px;
         margin: 0 10px;
         transform: translateY(80px);
+        background-color: rgb(255, 255, 255);
     }
 
     .image:hover .icon {
         transform: translateY(0px);
+        visibility: visible;
     }
 
     .icon:nth-child(1) {
@@ -65,7 +68,7 @@
 
     .image-content::before {
         content: "";
-        position: absolute;
+        position: relative;
         left: 0;
         bottom: 0;
         background: rgba(255, 255, 255, 0.7);
