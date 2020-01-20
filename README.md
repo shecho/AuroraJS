@@ -46,7 +46,7 @@ Install them all with the following two commands:
 
 Production dependencies
 ```
-npm install --save errorhandler express express-handlebars fs-extra i18n jsonwebtoken materialize-css md5 moment mongoose morgan multer nodemailer object.fromentries request requirejs stripe 
+npm install --save errorhandler express express-handlebars fs-extra i18n jsonwebtoken materialize-css md5 moment mongoose morgan multer nodemailer object.fromentries request requirejs stripe @authentication/google
 ```
 
 Development dependencies
@@ -59,22 +59,15 @@ npm install -D @babel/cli @babel/core @babel/preset-env ember-cli-materialize no
 To run a development environment run the next scripts:
 
 
-Install the packages named above, then, within the package.json write the following script:
+Install the packages named above, then, start the server running:
 
-```
-"dev":"env=development && nodemon src/index.js"
-```
-Then:
 ```
 npm run dev
 ```
 
 Have in mind that morgan will log everything you do in localhost if you start with development environment, to avoid this, run production environment
 
-```
-"start":"env=production && node src/index.js"
-```
-Then:
+
 ```
 npm start
 ```
@@ -108,7 +101,7 @@ For deployment there's no need of code changing. Just insert within the JSON pac
 
 * [Express](https://expressjs.com/en/starter/installing.html) - Main framework
 * [Node](https://nodejs.org/en/docs/) - Environment and server 
-* [NPM](https://maven.apache.org/) - Dependency Management
+* [NPM](https://www.npmjs.com/) - Dependency Management
 
 ## Contributing
 
@@ -121,7 +114,9 @@ We use [SemVer](http://semver.org/) for versioning.
 ## Authors
 
 * **Jhonatan Restrepo Garzón** - *Backend and templated frontend* - [StrangeGuy77](https://github.com/StrangeGuy77)
-* **Juan David Ríos Galeano** - *Frontend final update* - [PercyWolfraim](https://github.com/PercyWolfraim)
+* **Juan David Ríos Galeano** - *Frontend developer* - [Wolfram](https://github.com/wolfram)
+* **Sergio Valencia Aguirre** - *Frontend developer* - [Shecho](https://github.com/shecho)
+
 
 See also the list of [contributors](https://github.com) who participated in this project.
 
