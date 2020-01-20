@@ -1,3 +1,6 @@
+const { userSession } = require("../keys");
+const userSessionVerification = require("../helpers/userVerification");
+
 const helper = {};
 
 helper.randomName = () => {
@@ -29,26 +32,11 @@ helper.verificationCode = () => {
 };
 
 helper.size = obj => {
-  let size = 0,
-    key;
+  let size = 0;
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) size++;
   }
   return size;
-};
-
-helper.toBoolean = string => {
-  switch (string) {
-    case "true":
-      return true;
-      break;
-    case "false":
-      return false;
-      break;
-    default:
-      return false;
-      break;
-  }
 };
 
 helper.checkBuy = (collection, object) => {
@@ -59,6 +47,28 @@ helper.checkBuy = (collection, object) => {
     }
   }
   return false;
+};
+
+helper.init = async (language = "en", getUsername = false, getUseremail = false) => {
+  let includeUseremail = getUseremail;
+  let includeUsername = getUsername;
+  let toTranslateJSON = require(`../locales/${language}.json`);
+  let actualUserSession = userSession.actualUserSession;
+  let userProperties = userSessionVerification.userSessionResponse(
+    actualUserSession
+  );
+
+  const viewModel = {};
+  viewModel.language = toTranslateJSON;
+  viewModel.language.CurrentLanguage = language;
+  viewModel.session = userProperties;
+  if (includeUsername) {
+    viewModel.session.username = userSession.username;
+  }
+  if (includeUseremail){
+    viewModel.session.email = userSession.email;
+  }
+  return viewModel;
 };
 
 module.exports = helper;

@@ -4,7 +4,7 @@ const home = require("../controllers/home");
 const software = require("../controllers/software");
 const library = require("../controllers/library");
 const user = require("../controllers/user");
-const bcmb = require("../controllers/bancolombia");
+const bcmb = require("../controllers/apiConnections");
 
 module.exports = app => {
   // Index or single pages routes
@@ -24,6 +24,7 @@ module.exports = app => {
   router.get("/:language/software", software.index);
   router.get("/:language/software/:software_id", software.view);
   router.get("/:language/software/:software_id/download", software.download);
+  router.get("/:language/software/:software_id/buy", software.buy);
   router.post("/:language/software", software.create);
   router.post("/software/:software_id/like", software.like);
   router.post("/software/:software_id/comment", software.comment);
@@ -31,18 +32,29 @@ module.exports = app => {
 
   // Library routes
   router.get("/:language/library", library.index);
-  router.get("/:language/library/:book_id", library.view);
-  router.post("/library/upload", library.create);
-  router.post("/library/:book_id/like", library.like);
-  router.post("/library/:book_id/comment", library.comment);
-  router.delete("/library/:book_id/delete", library.delete);
+  // For books
+  router.get("/:language/library/books/upload", library.bookUploadView);
+  router.get("/:language/library/books/:book_id", library.bookView);
+  router.post("/library/books/upload", library.bookUploadProcess);
+  router.post("/library/books/:book_id/comment", library.bookComment);
+  router.post("/library/books/:book_id/like", library.bookLike);
+  router.delete("/library/:book_id/delete", library.bookDelete);
+  // For courses
+  router.get("/:language/library/courses/upload", library.courseUploadView);
+  router.get("/:language/library/courses/:course_id", library.courseView);
+  router.post("/library/courses/upload", library.courseUploadProcess);
+  router.post("/library/courses/:course_id/comment", library.courseComment);
+  router.post("/library/courses/:course_id/like", library.courseLike);
+  router.delete("/library/:course_id/delete", library.courseDelete);
+  // For both
+  router.post("/library/wishlist-add", library.wishlistAdd);
 
   // User routes
   router.get("/:language/login", user.login);
   router.get("/:language/signup", user.signup);
   router.get("/:language/profile", user.profile);
   router.get("/:language/users/:user_id", user.visit);
-  router.get("/:language/users/verification/:userid", user.userVerification);
+  router.get("/:language/users/verification/:userid", user.accountConfirmation);
   router.get(
     "/:language/users/:user_id/:activation_code",
     user.accountConfirmation
@@ -51,25 +63,22 @@ module.exports = app => {
   router.post("/signup", user.signupProcess);
   router.post("/signout", user.signout);
   router.post("/save-settings", user.saveProfileSettings);
+  router.post(
+    "/:language/users/:user_id/profile/pic-upload",
+    user.profilePicUpload
+  );
 
   // User profile routes
   router.get("/:language/stats", user.stats);
 
-  // Bancolombia router test
-  router.get("/oauth2/authorize/customers", bcmb.authorize), (bcmb.session = 1);
-  router.get("/oauth2/authorize/customers/success", bcmb.checkUser);
-  router.get("/oauth2/authorize/paying", bcmb.authorize), (bcmb.session = 2);
-  router.get("/oauth2/authorize/paying/success", bcmb.payUser);
+  // Google auth
+  router.get("/google/auth", bcmb.googleAuthentication);
 
   // Error router
   router.get("/:language/admin", home.error403);
   router.get("/:language/not-available", home.error503);
   router.get("/:language/timeout", home.error504);
   router.get("*", home.error404);
-
-  // Process handler
-  process.on("UnhandledPromiseRejectionWarning", home.unhandledPromise);
-  process.on("UnhandledError", home.unhandledPromise);
 
   app.use(router);
 };

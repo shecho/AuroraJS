@@ -14,7 +14,72 @@ $(document).ready(function() {
       console.log(data);
     }
   });
+
+  // Facebook analytics
+
+  window.fbAsyncInit = function() {
+    window.FB.init({
+      appId: "1006997812969524",
+      cookie: true,
+      xfbml: true,
+      version: "v4.0"
+    });
+
+    window.FB.AppEvents.logPageView();
+  };
+
+  (function(d, s, id) {
+    var js,
+      fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) {
+      return;
+    }
+    js = d.createElement(s);
+    js.id = id;
+    js.src = "https://connect.facebook.net/en_US/sdk.js";
+    fjs.parentNode.insertBefore(js, fjs);
+  })(document, "script", "facebook-jssdk");
 });
+
+function statusChangeCallback(response) {
+  if (response.status === "connected") {
+    // Logged into your app and Facebook.
+    FB.api("/me", function(response) {
+      response.from = "facebook";
+      $.ajax({
+        type: "POST",
+        url: "/signup",
+        data: response,
+        dataType: "json",
+        contentType: "application/x-www-form-urlencoded",
+        success: data => {
+          if (data.length <= 3) {
+            window.location.href = data;
+          } else {
+            document.getElementById("signup-alert-section").innerHTML = data;
+          }
+        },
+        error: data => {
+          document.getElementById("signup-alert-section").innerHTML = data;
+        }
+      });
+    });
+  } else {
+    // The person is not logged into your app or we are unable to tell.
+    document.getElementById("signup-alert-section").innerHTML =
+      "There was an error login with facebook.";
+  }
+}
+
+// Signup with facebook
+function checkLoginState() {
+  var response = {};
+  window.FB.getLoginStatus(function(response) {
+    statusChangeCallback(response);
+  });
+}
+
+// // Sign in with google
 
 // Login button
 
@@ -22,7 +87,7 @@ $("#login-button").click(function(e) {
   let email = document.getElementById("loginModalEmail").value;
   let password = document.getElementById("loginModalPassword").value;
 
-  data = {
+  const data = {
     email: email,
     password: password
   };
@@ -98,7 +163,7 @@ $("#signup-button").click(function(e) {
   };
   JSON.stringify(data);
 
-  if (!(username === "") || !username === "Username") {
+  if (!(username === "") || !(username === "Username")) {
     if (!(email === "")) {
       // Pattern verifies:
       // An @, something after and before the @, a dot '.' after whatever comes after @, and something after the dot.
@@ -205,14 +270,13 @@ $("button[id=btn-delete]").click(function() {
     let softId = $this.data("id");
     $.ajax({
       url: `/software/${softId}/delete`,
-      type: "DELETE"
-    }).done(function(result) {
-      $this.removeClass("btn-danger").addClass("btn-success");
-      $this
-        .find("i")
-        .removeClass("fa-times")
-        .addClass("fa-check");
-      $this.append("<span>Eliminado!</span>");
+      type: "DELETE",
+      success: data => {
+        window.location.href = data;
+      },
+      error: data => {
+        console.log(data);
+      }
     });
   }
 });
@@ -267,7 +331,7 @@ $("#saveSettings").click(function(e) {
   result = pattern.test(userSettings.email);
 
   // If userSettings ain't completely empty
-  if (checkProperties(userSettings).emptyProperties == 12) {
+  if (checkProperties(userSettings).emptyProperties === 12) {
     JSON.stringify(userSettings);
     $.ajax({
       type: "POST",
@@ -378,6 +442,135 @@ $("#saveSettings").click(function(e) {
           document.getElementById("settingsWarning").innerHTML = data;
         }
       });
+    }
+  }
+});
+
+let toggleControl = 1;
+const checkList = document.getElementById("list1");
+checkList.getElementsByClassName("anchor")[0].onclick = function(evt) {
+  if (checkList.classList.contains("visible"))
+    checkList.classList.remove("visible");
+  else checkList.classList.add("visible");
+};
+
+checkList.onblur = function(evt) {
+  checkList.classList.remove("visible");
+};
+if ($("#toggleFrameworks")) $("#toggleFrameworks").hide();
+
+$("#language").change(function(e) {
+  e.preventDefault();
+  $("#softwareDetailsModal").show();
+  let language = document.getElementById("language").value;
+  let actualClass = document.getElementById("iconToReplace").className;
+  switch (language) {
+    case "js":
+      $("#iconToReplace")
+        .removeClass(`${actualClass}`)
+        .addClass("fab fa-react icon");
+
+      document.getElementById("1stFrame").innerHTML = "React";
+      document.getElementById("2ndFrame").innerHTML = "Angular";
+      document.getElementById("3rdFrame").innerHTML = "Vue";
+      document.getElementById("4thFrame").innerHTML = "React native";
+      document.getElementById("5thFrame").innerHTML = "Meteor";
+
+      break;
+
+    case "ruby":
+      $("#iconToReplace")
+        .removeClass(`${actualClass}`)
+        .addClass("devicon-rails-plain-wordmark icon");
+
+      document.getElementById("1stFrame").innerHTML = "Ruby on rails";
+      document.getElementById("2ndFrame").innerHTML = "Hanami";
+      document.getElementById("3rdFrame").innerHTML = "Sinatra";
+      document.getElementById("4thFrame").innerHTML = "Cuba";
+      document.getElementById("5thFrame").innerHTML = "Nancy";
+      break;
+
+    case "python":
+      $("#iconToReplace")
+        .removeClass(`${actualClass}`)
+        .addClass("devicon-django-plain icon");
+
+      document.getElementById("1stFrame").innerHTML = "Django";
+      document.getElementById("2ndFrame").innerHTML = "Pyramid";
+      document.getElementById("3rdFrame").innerHTML = "Turbogears";
+      document.getElementById("4thFrame").innerHTML = "Web2py";
+      document.getElementById("5thFrame").innerHTML = "Flask";
+      break;
+
+    case "cpp":
+      $("#iconToReplace")
+        .removeClass(`${actualClass}`)
+        .addClass("devicon-cplusplus-plain icon");
+
+      document.getElementById("1stFrame").innerHTML = "STL";
+      document.getElementById("2ndFrame").innerHTML = "GNOME";
+      document.getElementById("3rdFrame").innerHTML = "Qt";
+      document.getElementById("4thFrame").innerHTML = "MFC";
+      document.getElementById("5thFrame").innerHTML = "NET";
+      break;
+
+    case "cs":
+      $("#iconToReplace")
+        .removeClass(`${actualClass}`)
+        .addClass("devicon-csharp-plain icon");
+
+      document.getElementById("1stFrame").innerHTML = "Xamarin";
+      document.getElementById("2ndFrame").innerHTML = "Unity";
+      document.getElementById("3rdFrame").innerHTML = "Mono";
+      document.getElementById("4thFrame").innerHTML = "NET";
+      document.getElementById("5thFrame").innerHTML =
+        "Windows platforms (Mac, iOS, Android)";
+      break;
+
+    case "c":
+      $("#iconToReplace")
+        .removeClass(`${actualClass}`)
+        .addClass("devicon-c-plain icon");
+
+      document.getElementById("1stFrame").innerHTML = "STL";
+      document.getElementById("2ndFrame").innerHTML = "GNOME";
+      document.getElementById("3rdFrame").innerHTML = "Qt";
+      document.getElementById("4thFrame").innerHTML = "MFC";
+      document.getElementById("5thFrame").innerHTML = "NET";
+      break;
+
+    case "java":
+      $("#iconToReplace")
+        .removeClass(`${actualClass}`)
+        .addClass("fas fa-leaf icon");
+
+      document.getElementById("1stFrame").innerHTML = "Spring";
+      document.getElementById("2ndFrame").innerHTML = "Blade";
+      document.getElementById("3rdFrame").innerHTML = "Dropwizard";
+      document.getElementById("4thFrame").innerHTML = "Grails";
+      document.getElementById("5thFrame").innerHTML = "GWT";
+      break;
+
+    case "php":
+      $("#iconToReplace")
+        .removeClass(`${actualClass}`)
+        .addClass("fab fa-laravel icon");
+
+      document.getElementById("1stFrame").innerHTML = "Laravel";
+      document.getElementById("2ndFrame").innerHTML = "Codeigniter";
+      document.getElementById("3rdFrame").innerHTML = "Symfony";
+      document.getElementById("4thFrame").innerHTML = "CakePHP";
+      document.getElementById("5thFrame").innerHTML = "Yii";
+      break;
+
+    default:
+      break;
+  }
+  if (language === "empty" || toggleControl === 1) {
+    $("#toggleFrameworks").slideToggle();
+    toggleControl = 2;
+    if (toggleControl === 2 && language === "empty") {
+      toggleControl = 1;
     }
   }
 });

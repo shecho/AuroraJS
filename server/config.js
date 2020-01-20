@@ -38,7 +38,7 @@ module.exports = app => {
   }
   app.use(
     multer({
-      dest: path.join(__dirname, `../public/upload/temp`)
+      dest: path.join(__dirname, "../public/upload/temp")
     }).single(`image`)
   );
   app.use(express.urlencoded({ extended: false }));
@@ -52,6 +52,8 @@ module.exports = app => {
 
   // Error handler
   "development" === process.env.env ? app.use(errorHandler) : null;
+
+  process.env.HTTPS = true;
 
   return app;
 };
